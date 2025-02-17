@@ -1,2 +1,2 @@
-# wasterwater
+# wastewater
 Wastewater surveillance analysis
