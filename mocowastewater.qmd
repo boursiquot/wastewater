@@ -1,0 +1,79 @@
+---
+title: "md_wastewater"
+format: docx
+editor: visual
+---
+
+## Montgomery County, Maryland Waste Water Analysis
+
+```{python}
+
+import pandas as pd
+import requests as rq
+import os
+import numpy as np
+
+dataPath = "/Users/bernice/Documents/Wastewater/Data/"
+
+
+```
+
+```{python}
+#| label: Creating a Data Frame of Site Zip Codes and Site Names
+
+data = {
+"zipCode" : ["20832", "20833", "20901", "20902","20903", "20906", "20910", "20912", "20832", "20850", "20854", "20841", "20874", "20874", "20876", "20886"],
+"siteName" : ["Reddy Branch", "Reddy Branch", "Arcola", "Arcola", "Arcola", "Arcola", "Arcola", "Arcola", "Arcola", "King Farm", "King Farm", "Hoyles Mill", "Hoyles Mill", "Wexford", "Wexford", "Wexford"]}
+
+coverage = pd.DataFrame(data)
+
+print(coverage)
+```
+
+---
+Source: https://www.montgomerycountymd.gov/covid19/data/wastewater-surveillance.html
+---
+
+```{python}
+#| label: Importing Zip Code-ZCTA Crosswalk and Merging with Site Zip Codes
+
+crossWalk = pd.read_csv(os.path.join(dataPath, "zip_zcta_xref.csv"), dtype = ("str", "str"))
+
+crossWalk.head()
+
+coverage2 = pd.merge(coverage, crossWalk, how = "left", left_on = "zipCode" , right_on = "zip_code").drop(columns = ["zip_code", "source"])
+
+coverage2.head()
+
+```
+
+---
+Source: https://github.com/censusreporter/acs-aggregate/blob/master/crosswalks/zip_to_zcta/zip_zcta_xref.csv
+---
+
+```{python}
+#| label: Importing deccenial 2020 ZCTA data
+
+zctaPop = pd.read_csv(os.path.join(dataPath, "DECENNIALDHC2020.P1-Data.csv"), skiprows = 2, names = ["geoID", "geoArea", "populationTotal"], dtype = {"geoID": str, "geoArea":str, "populationTotal":int}, usecols = [0,1,2])
+
+#Subsetting the geoArea column to get the zcta code alone
+
+zctaPop["zcta"] = zctaPop.geoArea.str.slice(start = 6)
+```
+
+---
+Source: data.census.gov
+---
+
+```{python}
+#| label: Merging with wastewater data 
+
+coverage3 = pd.merge(coverage2, zctaPop, how = "left", on = "zcta")
+
+coverage3.groupby("siteName").sum("populationTotal")
+
+coverage3["populationTotal"].sum()
+
+
+
+```
